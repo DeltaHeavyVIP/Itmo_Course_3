@@ -1,0 +1,59 @@
+|||||||||||||pci_dev.c|||||||||||||
+
+#include <linux/kernel.h>
+#include <linux/syscalls.h>
+#include <linux/pci.h>
+
+struct pci_dev* dev;
+
+SYSCALL_DEFINE0(pci_dev)
+{
+
+  while ((dev = pci_get_device(PCI_ANY_ID, PCI_ANY_ID, dev))) {
+
+    printk(KERN_INFO "pci devide found: pci_id =  %d\n", dev->device);
+  }
+  return 0;
+}
+
+|||||||||||||||||memblock_type.c||||||||||||||||||||||
+
+#include <linux/kernel.h>
+#include <linux/syscalls.h>
+#include <linux/fs.h>      
+#include <linux/path.h>
+#include <linux/memblock.h>
+#include <linux/types.h>
+
+phys_addr_t start, end;
+u64 i;
+
+inline void print_memory_type_info(struct memblock_type* memory) {
+  printk(KERN_INFO "memory name \"%s\"\n", memory->name);
+  printk(KERN_INFO "count \"%llu\"\n", (u64 )memory->total_size);
+  printk(KERN_INFO "count \"%lu\"\n", memory->cnt);
+  for_each_mem_range(i, memory, NULL,
+      NUMA_NO_NODE, MEMBLOCK_NONE, &start, &end, NULL) {
+        printk(KERN_INFO "memory region start %pa, size %llu \n", start, ((u64) end - (u64) start));
+  }
+
+}
+
+SYSCALL_DEFINE0(mem_type)
+{
+  print_memory_type_info(&memblock.memory);
+  return 0;
+}
+
+
+
+||||||||||||||||||||||||||||||||||||||||||||||||
+obj-y := pci_dev.o
+obj-y := memblock_type.o
+
+
+||||||||||||||||||||||||||||||||||||||||||||||||
+asmlinkage long sys_memblock_type(void);
+asmlinkage long sys_pci_dev(void);
+
+||||||||||||||||||||||||||||||||||||||||||||||||
